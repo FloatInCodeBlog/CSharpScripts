@@ -26,6 +26,9 @@ namespace CSharpScripts
             Console.WriteLine("ScriptWithNamespace");
             ScriptWithNamespace();
 
+            Console.WriteLine("ScriptAsDelegate");
+            ScriptAsDelegate();
+
             Console.ReadLine();
         }
 
@@ -56,6 +59,14 @@ namespace CSharpScripts
             var script = CSharpScript.Create(@"var result = Path.Combine(""folder"", ""file"");", scriptOptions);
             var state = script.Run();
             Console.WriteLine("State variable: " + state.Variables["result"].Value);
+        }
+
+        public static void ScriptAsDelegate()
+        {
+            var script = CSharpScript.Create(@"int Sum(int a, int b) { return a + b;}", ScriptOptions.Default);
+            var state = script.Run();
+            var sumFunction = state.CreateDelegate<Func<int, int, int>>("Sum");
+            Console.WriteLine("Sum function: " + sumFunction(2,22));
         }
     }
 }
