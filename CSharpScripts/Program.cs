@@ -12,6 +12,12 @@ namespace CSharpScripts
             public int Y;
         }
 
+        public class SumParams
+        {
+            public int a;
+            public int b;
+        }
+
         static void Main(string[] args)
         {
             Console.WriteLine("EvalWithoutParameters");
@@ -32,41 +38,43 @@ namespace CSharpScripts
             Console.ReadLine();
         }
 
-        public static void EvalWithoutParameters()
+        public static async void EvalWithoutParameters()
         {
-            var result = CSharpScript.Eval(@"25 + 30", ScriptOptions.Default);
+            var result = await CSharpScript.EvaluateAsync(@"25 + 30", ScriptOptions.Default);
             Console.WriteLine("Eval: " + result);
         }
 
-        public static void EvalExpression()
+        public static async void EvalExpression()
         {
-            var result = CSharpScript.Eval(@"X + Y", ScriptOptions.Default, new GlobalParams { X = 12, Y = 25 });
+            var result = await CSharpScript.EvaluateAsync(@"X + Y", ScriptOptions.Default, new GlobalParams { X = 12, Y = 25 });
             Console.WriteLine("Eval: " + result);
         }
 
-        public static void ScriptCreateAndRun()
+        public static async void ScriptCreateAndRun()
         {
-            var script = CSharpScript.Create(@"var result = X + Y;", ScriptOptions.Default);
-            var state = script.Run(new GlobalParams { X = 10, Y = 2 });
-            var state2 = script.Run(new GlobalParams { X = 1, Y = 3 });
+            var script = CSharpScript.Create(@"var result = X + Y;", ScriptOptions.Default, typeof(GlobalParams));
+            var state = await script.RunAsync(new GlobalParams { X = 10, Y = 2 });
+            var state2 = await script.RunAsync(new GlobalParams { X = 1, Y = 3 });
             Console.WriteLine("State variable: " + state.Variables["result"].Value);
             Console.WriteLine("State2 variable: " + state2.Variables["result"].Value);
         }
 
-        public static void ScriptWithNamespace()
+        public static async void ScriptWithNamespace()
         {
             var scriptOptions = ScriptOptions.Default.AddNamespaces("System.IO");
             var script = CSharpScript.Create(@"var result = Path.Combine(""folder"", ""file"");", scriptOptions);
-            var state = script.Run();
+            var state = await script.RunAsync();
             Console.WriteLine("State variable: " + state.Variables["result"].Value);
         }
 
-        public static void ScriptAsDelegate()
+        public static async void ScriptAsDelegate()
         {
-            var script = CSharpScript.Create(@"int Sum(int a, int b) { return a + b;}", ScriptOptions.Default);
-            var state = script.Run();
-            var sumFunction = state.CreateDelegate<Func<int, int, int>>("Sum");
-            Console.WriteLine("Sum function: " + sumFunction(2,22));
+            var param = new SumParams { a = 2, b = 22 };
+            var script = CSharpScript.Create<int>(@"int sum(int a, int b){return a + b;}", ScriptOptions.Default, typeof(SumParams))
+                .ContinueWith("sum(a, b)");
+            var function = script.CreateDelegate();
+            var result = await function(param);
+            Console.WriteLine("Sum function: " + result);
         }
     }
 }
